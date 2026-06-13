@@ -1,128 +1,108 @@
 import { useState, useEffect } from 'react'
 
-interface User {
-  telegramId: string;
-  firstName: string;
-  username?: string;
-  points: number;
-}
-
-export default function Dashboard({ user }: { user: User }) {
-  const [refStats, setRefStats] = useState({ count: 0, earnings: 0 })
-  const [copied, setCopied] = useState(false)
-  
-  // Set dynamic configurations dynamically optimized for clean distributions
-  const botUsername = "YOUR_BOT_USERNAME" // Replace with native BotFather alias
-  const appSlug = "king_app" // Replace with direct URL configuration slug from BotFather
-  const referralLink = `https://t.me/${botUsername}/${appSlug}?startapp=ref_${user?.telegramId}`
+export default function Dashboard({ user, initData }: { user: any, initData: string }) {
+  const [activeTab, setActiveTab] = useState<'home' | 'quests' | 'leaderboard'>('home')
+  const [leaders, setLeaders] = useState<any[]>([])
 
   useEffect(() => {
-    if (user?.telegramId) {
-      fetch(`/api/referrals/stats/${user.telegramId}`)
-        .then(res => res.json())
-        .then(data => setRefStats(data))
-        .catch(() => {})
+    if (activeTab === 'leaderboard') {
+      fetch('/api/leaderboard').then(r => r.json()).then(data => setLeaders(data.leaders))
     }
-  }, [user])
+  }, [activeTab])
 
-  const copyToClipboard = async () => {
-    try {
-      await navigator.clipboard.writeText(referralLink)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-      window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred('success')[cite: 2]
-    } catch (err) {
-      // Fallback
-    }
-  }
-
-  const shareViaTelegram = () => {
-    const shareText = encodeURIComponent(`👑 Join King App with me! Claim 100 welcome bonus points instantly. 🚀`)
-    const tgShareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${shareText}`
-    window.Telegram?.WebApp?.openTelegramLink(tgShareUrl)[cite: 2]
+  const completeTask = async (taskId: string, url: string) => {
+    window.Telegram?.WebApp?.openLink(url) // Open the link
+    // Wait slightly, then reward (Lean MVP fake-verify)
+    setTimeout(async () => {
+      const res = await fetch('/api/tasks/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData, taskId })
+      })
+      if (res.ok) {
+        window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred('success')
+        // In a real app, refresh user state here
+        alert('Task Complete! +50 Points') 
+      }
+    }, 3000)
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white p-4 font-sans selection:bg-blue-500/30">
-      <div className="max-w-md mx-auto space-y-5">
+    <div className="min-h-screen bg-black text-white p-4 font-sans pb-24">
+      <div className="max-w-md mx-auto space-y-6">
         
-        {/* Dynamic Context Header Profile Layout */}
-        <header className="flex items-center justify-between bg-neutral-900/40 border border-neutral-800/60 p-4 rounded-2xl backdrop-blur-md">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-full flex items-center justify-center font-bold text-white shadow-md">
-              {user?.firstName?.charAt(0) || 'U'}
-            </div>
-            <div>
-              <h1 className="text-sm font-medium text-neutral-400">Account Verified</h1>
-              <p className="text-base font-bold leading-tight">{user?.firstName}</p>
-            </div>
-          </div>
-          <div className="text-right">
-            <span className="text-xs font-semibold uppercase tracking-wider text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-full border border-blue-500/20">
-              ⚡ {user?.points + refStats.earnings} PTS
-            </span>
+        <header className="text-center py-6">
+          <h1 className="text-4xl font-black bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
+            {user.points} <span className="text-xl text-neutral-400">PTS</span>
+          </h1>
+          <div className="mt-2 inline-block bg-neutral-900 px-4 py-1.5 rounded-full text-sm font-medium border border-neutral-800">
+            🔥 Day {user.loginStreak} Streak
           </div>
         </header>
 
-        {/* Viral Loop Engine Hook Card Interface Component */}
-        <section className="bg-gradient-to-b from-neutral-900 via-neutral-900 to-neutral-950 border border-neutral-800/80 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-blue-600/10 rounded-full blur-xl pointer-events-none" />
-          
-          <div className="text-center space-y-2 mb-6">
-            <h2 className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-white via-neutral-200 to-neutral-400 bg-clip-text text-transparent">
-              Invite Friends. Earn Crypto.
-            </h2>
-            <p className="text-sm text-neutral-400 max-w-xs mx-auto">
-              Get <span className="text-white font-semibold">250 points</span> for every user who registers through your personal network invitation.
-            </p>
-          </div>
-
-          {/* Referral Analytics Engine Grid Tracking View */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            <div className="bg-neutral-950/60 border border-neutral-800/40 p-4 rounded-xl text-center">
-              <p className="text-xs text-neutral-500 font-medium uppercase tracking-wider mb-0.5">Total Invited</p>
-              <p className="text-2xl font-black text-white">{refStats.count}</p>
-            </div>
-            <div className="bg-neutral-950/60 border border-neutral-800/40 p-4 rounded-xl text-center">
-              <p className="text-xs text-neutral-500 font-medium uppercase tracking-wider mb-0.5">Bonus Generated</p>
-              <p className="text-2xl font-black text-green-400">+{refStats.earnings}</p>
-            </div>
-          </div>
-
-          {/* High Conversion Loop Actions Call to Execution */}
-          <div className="space-y-2">
-            <button
-              onClick={shareViaTelegram}
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg shadow-blue-600/20 active:scale-[0.99]"
+        {activeTab === 'home' && (
+          <section className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 text-center">
+            <h2 className="font-bold text-lg mb-2">Invite to Earn</h2>
+            <p className="text-neutral-400 text-sm mb-4">Get 250 PTS for every friend you invite.</p>
+            <button 
+              onClick={() => {/* Share Logic Here */}}
+              className="w-full bg-white text-black font-bold py-3.5 rounded-xl active:scale-95 transition-transform"
             >
-              <span>Send Invite Link</span>
-              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-1-.65-.35-1 .22-1.62.15-.15 2.73-2.5 2.78-2.7.01-.03.01-.15-.06-.21-.07-.06-.17-.04-.25-.02-.11.02-1.83 1.16-5.16 3.42-.49.34-.93.51-1.33.5-.44-.01-1.29-.25-1.92-.45-.77-.25-1.39-.39-1.34-.83.03-.23.35-.46.97-.71 3.82-1.66 6.37-2.75 7.64-3.28 3.65-1.53 4.41-1.8 4.9-.19l.06.02-.03.14z"/>
-              </svg>
+              Share Link
             </button>
-            
-            <button
-              onClick={copyToClipboard}
-              className={`w-full font-semibold py-3 rounded-xl border transition-all duration-200 text-sm ${
-                copied 
-                  ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400' 
-                  : 'bg-neutral-900 border-neutral-800 text-neutral-300 hover:bg-neutral-800'
-              }`}
-            >
-              {copied ? '✓ Link Copied' : 'Copy Personal Invite Link'}
-            </button>
-          </div>
-        </section>
+          </section>
+        )}
 
-        {/* Footer actions controls layout UI */}
-        <footer className="pt-2">
-          <button 
-            onClick={() => window.Telegram?.WebApp?.close()}[cite: 2]
-            className="w-full bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white text-sm font-medium py-3 rounded-xl transition-colors border border-neutral-800/40"
-          >
-            Exit Hub
-          </button>
-        </footer>
+        {activeTab === 'quests' && (
+          <section className="space-y-3">
+            <h2 className="font-bold text-lg px-2">Earn More Points</h2>
+            <button onClick={() => completeTask('join_tg', 'https://t.me/your_channel')} className="w-full flex items-center justify-between bg-neutral-900 p-4 rounded-xl border border-neutral-800">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center text-blue-400">✈️</div>
+                <div className="text-left"><p className="font-semibold">Join Channel</p></div>
+              </div>
+              <span className="font-bold text-yellow-500">+50</span>
+            </button>
+            <button onClick={() => completeTask('follow_x', 'https://x.com/your_handle')} className="w-full flex items-center justify-between bg-neutral-900 p-4 rounded-xl border border-neutral-800">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-neutral-800 rounded-full flex items-center justify-center text-white">𝕏</div>
+                <div className="text-left"><p className="font-semibold">Follow on X</p></div>
+              </div>
+              <span className="font-bold text-yellow-500">+50</span>
+            </button>
+          </section>
+        )}
+
+        {activeTab === 'leaderboard' && (
+          <section className="space-y-3">
+            <h2 className="font-bold text-lg px-2">Global Top 50</h2>
+            <div className="bg-neutral-900 rounded-2xl border border-neutral-800 overflow-hidden">
+              {leaders.map((leader, i) => (
+                <div key={i} className="flex justify-between items-center p-4 border-b border-neutral-800/50 last:border-0">
+                  <div className="flex items-center space-x-3">
+                    <span className="text-neutral-500 font-bold w-4">{i + 1}</span>
+                    <span className="font-semibold">{leader.firstName}</span>
+                  </div>
+                  <span className="text-yellow-500 font-bold">{leader.points}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Bottom Navigation */}
+        <nav className="fixed bottom-4 left-4 right-4 max-w-md mx-auto bg-neutral-900/90 backdrop-blur border border-neutral-800 rounded-2xl p-1.5 flex justify-between">
+          {['home', 'quests', 'leaderboard'].map(tab => (
+            <button
+              key={tab}
+              onClick={() => window.Telegram?.WebApp?.HapticFeedback?.selectionChanged() && setActiveTab(tab as any)}
+              className={`flex-1 py-3 text-sm font-semibold capitalize rounded-xl transition-colors ${activeTab === tab ? 'bg-neutral-800 text-white' : 'text-neutral-500'}`}
+            >
+              {tab}
+            </button>
+          ))}
+        </nav>
+
       </div>
     </div>
   )
