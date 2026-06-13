@@ -17,7 +17,7 @@
     {
       "binding": "DB",
       "database_name": "king-db",
-      "database_id": "YOUR_D1_DATABASE_ID_HERE" // Paste ID from setup
+      "database_id": "4314a9ec-3979-4ca8-b701-08116949484c" // Paste ID from setup
     }
   ]
 }
