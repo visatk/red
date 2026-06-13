@@ -1,32 +1,50 @@
-import { Hono } from 'hono';
+import { Hono } from 'hono'
+import { cors } from 'hono/cors'
+import { drizzle } from 'drizzle-orm/d1'
+import { eq } from 'drizzle-orm'
+import { users } from './schema'
+import { verifyTelegramAuth } from './auth'
 
-// Types for Cloudflare Bindings (Ready for Drizzle + D1 DB Auth)
 type Bindings = {
-  // DB: D1Database; 
-};
+  DB: D1Database
+  TELEGRAM_BOT_TOKEN: string
+}
 
-// Using Hono for lightweight Edge routing (already in package.json)
-const app = new Hono<{ Bindings: Bindings }>();
+const app = new Hono<{ Bindings: Bindings }>()
 
-app.get('/api/', (c) => {
-  return c.json({
-    success: true,
-    message: 'Hello from Cloudflare Edge Serverless! ⚡',
-  });
-});
+app.use('/api/*', cors())
 
-// Auth Route for Telegram Mini App
-app.post('/api/auth', async (c) => {
-  const body = await c.req.json();
-  const initData = body.initData;
-
-  // TODO: Validate 'initData' using your Telegram Bot Token (HMAC-SHA-256)
-  // After validation, you can use Drizzle ORM to save/update the user in D1 DB.
+app.post('/api/auth/login', async (c) => {
+  const { initData } = await c.req.json()
   
-  return c.json({ 
-    success: true, 
-    authorized: true 
-  });
-});
+  // Validate request via Telegram initData 
+  const isValid = await verifyTelegramAuth(initData, c.env.TELEGRAM_BOT_TOKEN)
+  if (!isValid) {
+    return c.json({ error: 'Unauthorized payload' }, 401)
+  }
 
-export default app;
+  const urlParams = new URLSearchParams(initData)
+  const userStr = urlParams.get('user')
+  if (!userStr) {
+    return c.json({ error: 'No user data found' }, 400)
+  }
+
+  const tgUser = JSON.parse(userStr)
+  const db = drizzle(c.env.DB)
+
+  // Auto-Login: Check existing or Insert new user
+  let user = await db.select().from(users).where(eq(users.telegramId, tgUser.id.toString())).get()
+
+  if (!user) {
+    await db.insert(users).values({
+      telegramId: tgUser.id.toString(),
+      firstName: tgUser.first_name,
+      username: tgUser.username || null,
+    }).execute()
+    user = await db.select().from(users).where(eq(users.telegramId, tgUser.id.toString())).get()
+  }
+
+  return c.json({ success: true, user })
+})
+
+export default app
