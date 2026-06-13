@@ -1,14 +1,18 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>King</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Tap Game Mini App</title>
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <!-- Growth/SEO Tip: Standardize OpenGraph tags to make organic sharing highly clickable -->
+    <meta property="og:title" content="Earn $TOKENS in 1 Tap! 🪙" />
+    <meta property="og:description" content="Join my squad. Play the most addictive tap game on Telegram." />
   </head>
-  <body>
+  <body class="bg-gray-900 overflow-hidden touch-none">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script src="https://telegram.org/js/telegram-web-app.js?62"></script>
   </body>
 </html>
